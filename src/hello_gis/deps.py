@@ -4,34 +4,46 @@
 """
 
 # --- Геопространственные ---
-import osmnx as ox
-import geopandas as gpd
-from shapely.geometry import Point, LineString, box, Polygon
-from shapely.geometry.base import BaseGeometry
-import shapely.geometry as geom
-
-# --- Визуализация ---
-import matplotlib.pyplot as plt
-import matplotlib.cm as cm
-from matplotlib.patches import Rectangle
-
-# --- Данные ---
-import pandas as pd
-import numpy as np
+import logging
+import os
+import sys
 
 # --- Стандартная библиотека ---
 from pathlib import Path
-import logging
-import sys
-import os
+
+import geopandas as gpd
+
+# --- Визуализация ---
+import matplotlib.pyplot as plt
+import numpy as np
+import osmnx as ox
+
+# --- Данные ---
+import pandas as pd
+import requests
+import shapely.geometry as geom
+from matplotlib import cm
+from matplotlib.patches import Rectangle
+from shapely.geometry import LineString, Point, Polygon, box
+from shapely.geometry.base import BaseGeometry
 
 __all__ = [
-    # Гео
-    "ox", "gpd", "Point", "LineString", "box", "Polygon", "BaseGeometry", "geom",
-    # Виз
-    "plt", "cm", "Rectangle",
-    # Данные
-    "pd", "np",
-    # Стандарт
-    "Path", "logging", "sys", "os",
+    "BaseGeometry",
+    "LineString",
+    "Path",
+    "Point",
+    "Polygon",
+    "Rectangle",
+    "box",
+    "cm",
+    "geom",
+    "gpd",
+    "logging",
+    "np",
+    "os",
+    "ox",
+    "pd",
+    "plt",
+    "requests",
+    "sys",
 ]

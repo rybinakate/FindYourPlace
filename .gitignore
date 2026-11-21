@@ -1,29 +1,41 @@
-# Python-generated files
+# Учётные данные и локальные настройки
+.env
+.env.*
+!.env.example
+/.aws/
+/My/
+/test_filebase.py
+
+# Python, окружения и кэши инструментов
+.venv/
+venv/
 __pycache__/
 *.py[oc]
 build/
 dist/
 wheels/
 *.egg-info
-
-# Virtual environments
-.venv
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
 .DS_Store
-**/.DS_Store
 
-# Данные и результаты (никогда не коммитим!)
-data/raw/
-data/processed/
-outputs/*
+# Локальные данные и производные файлы
+/cache/
+/data/raw/
+/data/processed/
+/data/inspection/
 *.csv
 *.geojson
 *.parquet
+*.geoparquet
+*.duckdb
+*.duckdb.wal
+*.graphml
+*.osm.pbf
 
-# Кэш инструментов
-.mypy_cache/
-.ruff_cache/
-__pycache__/
-
-# Разрешаем PNG и PDF в outputs/ (ЭТО ДОЛЖНО БЫТЬ В КОНЦЕ!)
-!outputs/*.png
-!outputs/*.pdf
+# Иллюстрации портфолио
+/outputs/*
+!/outputs/park_accessibility_analysis.png
+!/outputs/park_stats.png
+!/outputs/parks_map.png

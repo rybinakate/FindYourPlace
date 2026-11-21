@@ -22,11 +22,11 @@ def run_full_pipeline() -> None:
     """
     d.logging.basicConfig(level=d.logging.INFO, format="%(levelname)s: %(message)s")
     print("🚀 Запуск полного пайплайна Hello-GIS...\n")
-    
+
     # 1. Скачиваем и подготавливаем данные
     fetch_parks()
     print()
-    
+
     # 2. Создаем карту и графики
     visualize_main()
 
@@ -37,7 +37,7 @@ def main() -> None:
     test_polygon = d.Polygon([(0, 0), (1, 0), (1, 1), (0, 1)])
     area = calculate_area(test_polygon)
     print(f"📐 Площадь тестового полигона 1x1: {area}\n")
-    
+
     # Запуск основного пайплайна
     run_full_pipeline()
 

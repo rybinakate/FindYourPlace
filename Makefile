@@ -32,7 +32,7 @@ help:
 	@echo "  make run           - Запустить основной скрипт (main.py)"
 	@echo "  make data          - Скачать данные из OSM"
 	@echo "  make viz           - Создать визуализации"
-	@echo "  make test          - Запустить тесты"
+	@echo "  make test          - Сообщить о статусе тестового покрытия"
 	@echo "  make clean         - Очистить кэш, outputs и временные файлы"
 
 # --- УСТАНОВКА ЗАВИСИМОСТЕЙ ---
@@ -61,16 +61,16 @@ network:
 # --- ПРОВЕРКА КОДА ---
 check: $(SOURCES)
 	@echo "🔍 Проверяем типы (mypy)..."
-	$(PYTHON) -m mypy $(PACKAGE)/
+	uv run --locked --group dev mypy $(PACKAGE)/
 	@echo "🎨 Проверяем стиль (ruff)..."
-	ruff check $(PACKAGE)/
+	uv run --locked --group dev ruff check $(PACKAGE)/ generate_readme.py
 	@echo "✅ Все проверки пройдены!"
 
 # --- ФОРМАТИРОВАНИЕ КОДА ---
 format:
 	@echo "🎨 Форматируем код..."
-	ruff format $(PACKAGE)/
-	ruff check --fix $(PACKAGE)/
+	uv run --locked --group dev ruff format $(PACKAGE)/ generate_readme.py
+	uv run --locked --group dev ruff check --fix $(PACKAGE)/ generate_readme.py
 	@echo "✅ Код отформатирован!"
 
 # --- ЗАПУСК ПРОГРАММЫ ---
@@ -80,9 +80,8 @@ run: $(SOURCES)
 
 # --- ТЕСТЫ ---
 test:
-	@echo "🧪 Запускаем тесты..."
-	$(PYTHON) -m pytest tests/ -v
-	@echo "✅ Тесты пройдены!"
+	@echo "Автоматических тестов пока нет. Для статических проверок используйте make check." >&2
+	@exit 1
 
 # --- ОЧИСТКА ---
 clean:
