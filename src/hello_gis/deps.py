@@ -1,24 +1,24 @@
 """
-Централизованные импорты сторонних зависимостей.
-Только общие зависимости — специфичные импортируются локально.
+Shared third-party imports.
+Feature-specific dependencies are imported locally.
 """
 
-# --- Геопространственные ---
+# --- Geospatial ---
 import logging
 import os
 import sys
 
-# --- Стандартная библиотека ---
+# --- Standard library ---
 from pathlib import Path
 
 import geopandas as gpd
 
-# --- Визуализация ---
+# --- Visualization ---
 import matplotlib.pyplot as plt
 import numpy as np
 import osmnx as ox
 
-# --- Данные ---
+# --- Data ---
 import pandas as pd
 import requests
 import shapely.geometry as geom

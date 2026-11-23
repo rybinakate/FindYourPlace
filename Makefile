@@ -1,9 +1,9 @@
 # ============================================================
-# Makefile для проекта Hello GIS
-# Использование: make <цель> (например: make run, make check)
+# Makefile for the Hello GIS project
+# Usage: make <target> (for example: make run, make check)
 # ============================================================
 
-# --- ПЕРЕМЕННЫЕ ---
+# --- VARIABLES ---
 PYTHON := uv run python
 SRC := src
 PACKAGE := $(SRC)/hello_gis
@@ -11,84 +11,91 @@ DATA_RAW := data/raw
 DATA_PROCESSED := data/processed
 OUTPUTS := outputs
 
-# Все Python-файлы в пакете hello_gis/
+# All Python files in the hello_gis/
 SOURCES := $(wildcard $(PACKAGE)/*.py)
+CHECK_PATHS := src scripts tests generate_readme.py
+DEV := uv run --locked --group dev
 
-# --- ЦЕЛИ, КОТОРЫЕ НЕ ЯВЛЯЮТСЯ ФАЙЛАМИ ---
-.PHONY: all help install check format run test clean data viz
+# --- PHONY TARGETS ---
+.PHONY: all help install check lint format-check type-check format run test clean data viz network
 
-# --- ГЛАВНАЯ ЦЕЛЬ (выполняется при простом `make`) ---
+# --- DEFAULT TARGET (runs when invoking `make`) ---
 all: check run
-	@echo "✅ Всё готово!"
+	@echo "✅ All tasks complete!"
 
-# --- СПРАВКА ---
+# --- HELP ---
 help:
-	@echo "Доступные команды:"
-	@echo "  make help          - Показать эту справку"
-	@echo "  make all           - Проверить код и запустить (по умолчанию)"
-	@echo "  make install       - Установить зависимости"
-	@echo "  make check         - Проверить код (mypy + ruff)"
-	@echo "  make format        - Отформатировать код"
-	@echo "  make run           - Запустить основной скрипт (main.py)"
-	@echo "  make data          - Скачать данные из OSM"
-	@echo "  make viz           - Создать визуализации"
-	@echo "  make test          - Сообщить о статусе тестового покрытия"
-	@echo "  make clean         - Очистить кэш, outputs и временные файлы"
+	@echo "Available commands:"
+	@echo "  make help          - Show this help"
+	@echo "  make all           - Check the code and run the application (default)"
+	@echo "  make install       - Install dependencies"
+	@echo "  make check         - Run lint, format checks, and offline unit tests"
+	@echo "  make lint          - Lint maintained Python files with Ruff"
+	@echo "  make format-check  - Check Python formatting without editing files"
+	@echo "  make type-check    - Run mypy on the application package"
+	@echo "  make format        - Format the code"
+	@echo "  make run           - Run the main script (main.py)"
+	@echo "  make data          - Download OSM data"
+	@echo "  make viz           - Create visualizations"
+	@echo "  make test          - Run local tests"
+	@echo "  make clean         - Clear caches, outputs, and temporary files"
 
-# --- УСТАНОВКА ЗАВИСИМОСТЕЙ ---
+# --- DEPENDENCY INSTALLATION ---
 install:
-	uv sync
-	@echo "✅ Зависимости установлены"
+	uv sync --locked
+	@echo "✅ Dependencies installed"
 
-# --- СКАЧИВАНИЕ ДАННЫХ ---
+# --- DATA DOWNLOAD ---
 data:
-	@echo "📥 Скачиваем данные из OSM..."
+	@echo "📥 Downloading OSM data..."
 	$(PYTHON) -m hello_gis.fetch_data
-	@echo "✅ Данные готовы!"
+	@echo "✅ Data ready!"
 
-# --- ВИЗУАЛИЗАЦИЯ ---
+# --- VISUALIZATION ---
 viz:
-	@echo "🎨 Создаем визуализации..."
+	@echo "🎨 Creating visualizations..."
 	$(PYTHON) -m hello_gis.visualize
-	@echo "✅ Визуализации готовы!"
+	@echo "✅ Visualizations ready!"
 
-	# --- СЕТЕВОЙ АНАЛИЗ ---
+	# --- NETWORK ANALYSIS ---
 network:
-	@echo "🕸️  Запускаем сетевой анализ доступности парков..."
+	@echo "🕸️  Running park accessibility network analysis..."
 	$(PYTHON) -m hello_gis.network_analysis
-	@echo "✅ Анализ завершен!"
+	@echo "✅ Analysis complete!"
 
-# --- ПРОВЕРКА КОДА ---
-check: $(SOURCES)
-	@echo "🔍 Проверяем типы (mypy)..."
-	uv run --locked --group dev mypy $(PACKAGE)/
-	@echo "🎨 Проверяем стиль (ruff)..."
-	uv run --locked --group dev ruff check $(PACKAGE)/ generate_readme.py
-	@echo "✅ Все проверки пройдены!"
+# --- CODE CHECKS ---
+check: lint format-check test
 
-# --- ФОРМАТИРОВАНИЕ КОДА ---
+lint:
+	$(DEV) ruff check $(CHECK_PATHS)
+
+format-check:
+	$(DEV) ruff format --check $(CHECK_PATHS)
+
+type-check:
+	$(DEV) mypy $(PACKAGE)/
+
+# --- CODE FORMATTING ---
 format:
-	@echo "🎨 Форматируем код..."
-	uv run --locked --group dev ruff format $(PACKAGE)/ generate_readme.py
-	uv run --locked --group dev ruff check --fix $(PACKAGE)/ generate_readme.py
-	@echo "✅ Код отформатирован!"
+	$(DEV) ruff format $(CHECK_PATHS)
+	$(DEV) ruff check --fix $(CHECK_PATHS)
+	@echo "✅ Code formatted!"
 
-# --- ЗАПУСК ПРОГРАММЫ ---
+# --- RUN THE APPLICATION ---
 run: $(SOURCES)
-	@echo "🚀 Запускаем программу..."
+	@echo "🚀 Starting the application..."
 	$(PYTHON) -m hello_gis.main
 
-# --- ТЕСТЫ ---
+# --- TESTS ---
 test:
-	@echo "Автоматических тестов пока нет. Для статических проверок используйте make check." >&2
-	@exit 1
+	PROJ_NETWORK=OFF MPLBACKEND=Agg $(DEV) python -m pytest tests
 
-# --- ОЧИСТКА ---
+# --- CLEANUP ---
 clean:
-	@echo "🧹 Очищаем кэш и временные файлы..."
+	@echo "🧹 Removing caches and temporary files..."
 	rm -rf .mypy_cache .ruff_cache __pycache__
 	rm -rf .pytest_cache
 	rm -rf $(PACKAGE)/__pycache__
 	rm -rf cache/
 	rm -rf $(OUTPUTS)/*
-	@echo "✅ Очистка завершена!"
+	@echo "✅ Cleanup complete!"

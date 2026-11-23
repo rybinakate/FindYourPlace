@@ -1,12 +1,12 @@
 """
-Hello GIS - Модуль для анализа доступности парков через OSMnx.
+Hello GIS - Park accessibility analysis with OSMnx.
 """
 
-# Импортируем только модуль config
+# Import only config
 from . import config
 
-# Остальные модули (fetch_data, visualize, network_analysis)
-# вызываются напрямую через python -m, поэтому здесь их импортировать не нужно
+# The other modules (fetch_data, visualize, network_analysis)
+# are invoked with python -m and need no package-level import
 
 __all__ = [
     "config",

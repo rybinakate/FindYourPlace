@@ -1,6 +1,6 @@
 """
-ETL пайплайн: Скачивание OSM PBF -> Фильтрация через Pyrosm -> DuckDB -> GeoParquet в S3 Filebase.
-Еженедельный запуск запланирован в дорожной карте.
+ETL pipeline: download an OSM PBF, filter with Pyrosm, load DuckDB, and export GeoParquet to S3 Filebase.
+The roadmap calls for a weekly run.
 """
 
 import os
@@ -14,26 +14,26 @@ from pyrosm import OSM
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
-# 1. Загрузка переменных окружения
+# 1. Load environment variables
 env_path = Path(__file__).resolve().parents[2] / ".env"
 load_dotenv(dotenv_path=env_path)
 
 FILEBASE_KEY = os.getenv("FILEBASE_KEY")
 FILEBASE_SECRET = os.getenv("FILEBASE_SECRET")
 
-print("🔍 Проверка Filebase credentials:")
-print("FILEBASE_KEY загружен:", bool(FILEBASE_KEY))
-print("FILEBASE_SECRET загружен:", bool(FILEBASE_SECRET))
+print("🔍 Checking Filebase credentials:")
+print("FILEBASE_KEY loaded:", bool(FILEBASE_KEY))
+print("FILEBASE_SECRET loaded:", bool(FILEBASE_SECRET))
 
 if not FILEBASE_KEY or not FILEBASE_SECRET:
     raise ValueError(
-        "❌ Ошибка: Установите переменные окружения FILEBASE_KEY и FILEBASE_SECRET"
+        "❌ Set the FILEBASE_KEY and FILEBASE_SECRET environment variables."
     )
 
-print("✅ Переменные загружены успешно!")
+print("✅ Environment variables loaded!")
 
 
-# ================= КОНФИГУРАЦИЯ =================
+# ================= CONFIGURATION =================
 CITY_NAME = "madrid"
 PBF_URL = f"https://download.geofabrik.de/europe/spain/{CITY_NAME}-latest.osm.pbf"
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -61,18 +61,18 @@ def get_robust_session() -> requests.Session:
 
 
 def download_pbf(force_download: bool = False) -> None:
-    """Скачивает PBF файл, если его нет или если принудительно запрошено обновление."""
+    """Download the PBF if it is missing or a refresh is requested."""
 
-    """# 🚀 УМНАЯ ПРОВЕРКА: если файл есть и он больше 10 МБ, пропускаем скачивание
+    """# 🚀 Skip the download when the existing file exceeds 10 MB
     if LOCAL_PBF_PATH.exists() and not force_download:
         file_size_mb = LOCAL_PBF_PATH.stat().st_size / (1024 * 1024)
         if file_size_mb > 10:
-            print(f"✅ Файл уже существует ({file_size_mb:.2f} MB). Пропускаем скачивание.")
+            print(f"✅ File already exists ({file_size_mb:.2f} MB). Skipping the download.")
             return"""
 
-    print(f"⬇️ Начинаем скачивание {CITY_NAME}-latest.osm.pbf...")
+    print(f"⬇️ Downloading {CITY_NAME}-latest.osm.pbf...")
     if LOCAL_PBF_PATH.exists():
-        print("⚠️ Найден старый/битый файл, удаляем...")
+        print("⚠️ Removing the old or corrupt file...")
         LOCAL_PBF_PATH.unlink()
 
     session = get_robust_session()
@@ -84,11 +84,11 @@ def download_pbf(force_download: bool = False) -> None:
                     file.write(chunk)
 
     file_size_mb = LOCAL_PBF_PATH.stat().st_size / (1024 * 1024)
-    print(f"✅ Скачивание завершено! ({file_size_mb:.2f} MB)")
+    print(f"✅ Download complete! ({file_size_mb:.2f} MB)")
 
 
 def process_and_upload_to_s3() -> None:
-    print("🦆 Инициализация DuckDB...")
+    print("🦆 Initializing DuckDB...")
 
     db_path = PROJECT_ROOT / "data" / "reference" / "osm_madrid.duckdb"
     db_path.parent.mkdir(parents=True, exist_ok=True)
@@ -104,7 +104,7 @@ def process_and_upload_to_s3() -> None:
     con.execute(f"SET s3_access_key_id='{AWS_KEY}';")
     con.execute(f"SET s3_secret_access_key='{AWS_SECRET}';")
 
-    print("🧪 Тестируем запись в Filebase...")
+    print("🧪 Testing write access to Filebase...")
 
     con.execute("""
         COPY (
@@ -116,13 +116,13 @@ def process_and_upload_to_s3() -> None:
         (FORMAT PARQUET);
     """)
 
-    print("✅ Тестовая запись в Filebase прошла успешно!")
+    print("✅ Filebase test write succeeded!")
 
-    print("🔄 Чтение PBF через pyrosm...")
+    print("🔄 Reading the PBF with Pyrosm...")
     osm = OSM(str(LOCAL_PBF_PATH))
 
-    # 1. ПАРКИ
-    print("   📍 Извлекаем парки...")
+    # 1. PARKS
+    print("   📍 Extracting parks...")
 
     all_landuse = osm.get_data_by_custom_criteria(
         custom_filter={
@@ -134,8 +134,8 @@ def process_and_upload_to_s3() -> None:
         filter_type="keep",
     )
 
-    print(f"      Всего объектов landuse: {len(all_landuse)}")
-    print(f"      Колонки: {all_landuse.columns.tolist()}")
+    print(f"      Total features tagged landuse: {len(all_landuse)}")
+    print(f"      Columns: {all_landuse.columns.tolist()}")
 
     mask_leisure = (
         all_landuse["leisure"].isin(["park"])
@@ -158,15 +158,15 @@ def process_and_upload_to_s3() -> None:
     mask_parks = mask_leisure | mask_landuse | mask_boundary
     parks_gdf = all_landuse[mask_parks].copy()
 
-    # Пока не удаляем безымянные объекты
-    print(f"      Найдено парков/зелёных зон: {len(parks_gdf)}")
+    # Retain unnamed features for now
+    print(f"      Parks and green spaces found: {len(parks_gdf)}")
 
     # 2. POI
-    print("   📍 Извлекаем POI...")
+    print("   📍 Extracting POI...")
     all_pois = osm.get_pois()
 
-    print(f"      Всего объектов POI: {len(all_pois)}")
-    print(f"      Колонки: {all_pois.columns.tolist()}")
+    print(f"      Total POI: {len(all_pois)}")
+    print(f"      Columns: {all_pois.columns.tolist()}")
 
     mask_amenity = (
         all_pois["amenity"].isin(["school", "kindergarten", "hospital", "clinic"])
@@ -179,20 +179,20 @@ def process_and_upload_to_s3() -> None:
     if "name" in pois_gdf.columns:
         pois_gdf = pois_gdf[pois_gdf["name"].notna()]
     else:
-        print("⚠️ Колонка 'name' отсутствует в POI")
+        print("⚠️ Missing 'name' column in POI")
         pois_gdf = pois_gdf.iloc[0:0]
 
-    print(f"      Найдено {len(pois_gdf)} POI")
+    print(f"      Found {len(pois_gdf)} POI")
 
-    # 3. МЕТРО
-    print("   📍 Извлекаем метро...")
+    # 3. METRO
+    print("   📍 Extracting metro stations...")
 
     metro_gdf = osm.get_data_by_custom_criteria(
         custom_filter='["railway"="station"]["station"="subway"]', filter_type="keep"
     )
-    print(f"      Найдено {len(metro_gdf)} станций метро")
+    print(f"      Found {len(metro_gdf)} metro stations")
 
-    # Подготовка геометрии для DuckDB
+    # Prepare geometries for DuckDB
     parks_gdf_wkb = parks_gdf.copy()
     pois_gdf_wkb = pois_gdf.copy()
     metro_gdf_wkb = metro_gdf.copy()
@@ -201,13 +201,13 @@ def process_and_upload_to_s3() -> None:
     pois_gdf_wkb["geometry"] = pois_gdf_wkb.geometry.to_wkb()
     metro_gdf_wkb["geometry"] = metro_gdf_wkb.geometry.to_wkb()
 
-    # Регистрируем DataFrame в DuckDB
+    # Register the DataFrame with DuckDB
     con.register("parks_gdf_wkb", parks_gdf_wkb)
     con.register("pois_gdf_wkb", pois_gdf_wkb)
     con.register("metro_gdf_wkb", metro_gdf_wkb)
 
-    # Загружаем в DuckDB
-    print("   💾 Загружаем в DuckDB...")
+    # Load into DuckDB
+    print("   💾 Loading into DuckDB...")
     con.execute("""
     CREATE OR REPLACE TABLE parks AS
     SELECT
@@ -232,17 +232,17 @@ def process_and_upload_to_s3() -> None:
         FROM metro_gdf_wkb
     """)
 
-    print(f"✅ Локальная база обновлена: {db_path}")
+    print(f"✅ Local database updated: {db_path}")
 
     parks_count = con.execute("SELECT COUNT(*) FROM parks").fetchone()[0]
     pois_count = con.execute("SELECT COUNT(*) FROM pois").fetchone()[0]
     metro_count = con.execute("SELECT COUNT(*) FROM metro").fetchone()[0]
 
-    print(f"   📊 parks: {parks_count} записей")
-    print(f"   📊 pois: {pois_count} записей")
-    print(f"   📊 metro: {metro_count} записей")
+    print(f"   📊 parks: {parks_count} records")
+    print(f"   📊 pois: {pois_count} records")
+    print(f"   📊 metro: {metro_count} records")
 
-    print("📤 Экспорт в S3 Filebase...")
+    print("📤 Exporting to S3 Filebase...")
 
     con.execute(
         f"COPY parks TO 's3://{S3_BUCKET}/osm/{CITY_NAME}_parks.geoparquet' (FORMAT PARQUET);"
@@ -255,26 +255,24 @@ def process_and_upload_to_s3() -> None:
     )
 
     con.close()
-    print("✅ Данные успешно загружены в S3!")
+    print("✅ Upload to S3 complete!")
 
 
 def cleanup() -> None:
-    # Мы НЕ удаляем файл при отладке, чтобы не качать его снова.
-    # Если захотите очистить место, раскомментируйте строку ниже.
+    # Keep the PBF during debugging to avoid downloading it again.
+    # Uncomment the line below to free disk space.
     # if LOCAL_PBF_PATH.exists():
     #     LOCAL_PBF_PATH.unlink()
-    #     print("🧹 Временный PBF файл удален.")
+    #     print("🧹 Temporary PBF file removed.")
     pass
 
 
 if __name__ == "__main__":
     if not AWS_KEY or not AWS_SECRET:
-        print(
-            "❌ Ошибка: Установите переменные окружения FILEBASE_KEY и FILEBASE_SECRET"
-        )
+        print("❌ Set the FILEBASE_KEY and FILEBASE_SECRET environment variables.")
         raise SystemExit(1)
 
-    # force_download=False означает: "используй существующий файл, если он есть"
+    # force_download=False reuses the existing file when available.
     download_pbf(force_download=False)
     process_and_upload_to_s3()
     cleanup()

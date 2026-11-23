@@ -1,12 +1,15 @@
-# Учётные данные и локальные настройки
+# Credentials and local settings
 .env
 .env.*
 !.env.example
 /.aws/
 /My/
 /test_filebase.py
+*.pem
+*.key
+*.p12
 
-# Python, окружения и кэши инструментов
+# Python, virtual environments, and tool caches
 .venv/
 venv/
 __pycache__/
@@ -20,7 +23,7 @@ wheels/
 .pytest_cache/
 .DS_Store
 
-# Локальные данные и производные файлы
+# Local data and derived files
 /cache/
 /data/raw/
 /data/processed/
@@ -32,9 +35,11 @@ wheels/
 *.duckdb
 *.duckdb.wal
 *.graphml
-*.osm.pbf
+*.pbf
+*.gpkg
+*.gpkg-*
 
-# Иллюстрации портфолио
+# Portfolio illustrations
 /outputs/*
 !/outputs/park_accessibility_analysis.png
 !/outputs/park_stats.png

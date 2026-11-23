@@ -1,6 +1,6 @@
 """
-Точка входа в проект Hello-GIS.
-Координирует запуск всех модулей (скачивание и визуализация).
+Entry point for Hello-GIS.
+Coordinates the data download and visualization modules.
 """
 
 from . import deps as d
@@ -10,35 +10,35 @@ from .visualize import main as visualize_main
 
 def calculate_area(geom: d.BaseGeometry) -> float:
     """
-    Вычисляет площадь геометрии.
-    Демонстрация использования типизированных импортов из deps.py.
+    Calculate the area of a geometry.
+    Demonstrate the typed imports from deps.py.
     """
     return float(geom.area)
 
 
 def run_full_pipeline() -> None:
     """
-    Запускает полный пайплайн: скачивание данных + создание визуализаций.
+    Run the full pipeline, from downloading data to creating visualizations.
     """
     d.logging.basicConfig(level=d.logging.INFO, format="%(levelname)s: %(message)s")
-    print("🚀 Запуск полного пайплайна Hello-GIS...\n")
+    print("🚀 Running the full Hello-GIS pipeline...\n")
 
-    # 1. Скачиваем и подготавливаем данные
+    # 1. Download and prepare data
     fetch_parks()
     print()
 
-    # 2. Создаем карту и графики
+    # 2. Create the map and charts
     visualize_main()
 
 
 def main() -> None:
-    """Главная точка входа в приложение."""
-    # Небольшая демонстрация работы с геометрией (можно удалить, если не нужна)
+    """Run the application."""
+    # Demonstrate a geometry operation (optional)
     test_polygon = d.Polygon([(0, 0), (1, 0), (1, 1), (0, 1)])
     area = calculate_area(test_polygon)
-    print(f"📐 Площадь тестового полигона 1x1: {area}\n")
+    print(f"📐 Area of the 1 × 1 test polygon: {area}\n")
 
-    # Запуск основного пайплайна
+    # Run the main pipeline
     run_full_pipeline()
 
 

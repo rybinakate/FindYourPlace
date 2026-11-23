@@ -1,10 +1,10 @@
 """
-Модуль визуализации геопространственных данных.
-Использует geopandas, contextily и matplotlib.
-Агностичен к локации — регион задается в config.py.
+Geospatial visualizations.
+Uses GeoPandas, contextily, and matplotlib.
+Select the study region in config.py.
 """
 
-# --- Тяжёлые/специфичные зависимости только для визуализации ---
+# --- Visualization-specific dependencies ---
 import contextily as ctx
 import seaborn as sns
 
@@ -15,11 +15,11 @@ from . import deps as d
 def plot_parks_with_basemap(
     gdf: d.gpd.GeoDataFrame, output_path: d.Path = cfg.MAP_OUTPUT
 ) -> None:
-    """Рисует карту парков с подложкой, градусной сеткой и рамкой."""
+    """Draw a park map with a basemap, graticule, and neatline."""
 
     fig, ax = d.plt.subplots(figsize=cfg.VIZ.map_figsize)
 
-    # Границы с буфером
+    # Buffered map extent
     minx, miny, maxx, maxy = gdf.total_bounds
     x_buf = (maxx - minx) * cfg.CITY_BUFFER_RATIO
     y_buf = (maxy - miny) * cfg.CITY_BUFFER_RATIO
@@ -35,7 +35,7 @@ def plot_parks_with_basemap(
     ax.set_xlim(minx_w, maxx_w)
     ax.set_ylim(miny_w, maxy_w)
 
-    # Подложка (✅ ctx используется напрямую, не через d.)
+    # Basemap (use ctx directly rather than d.)
     ctx.add_basemap(
         ax,
         source=ctx.providers.Esri.WorldGrayCanvas,
@@ -43,7 +43,7 @@ def plot_parks_with_basemap(
         zoom=13,
     )
 
-    # Сдвигаем подпись источника
+    # Reposition the attribution
     for text in ax.texts:
         if "Esri" in text.get_text() or "OpenStreetMap" in text.get_text():
             x, y = text.get_position()
@@ -54,7 +54,7 @@ def plot_parks_with_basemap(
             text.set_fontsize(7)
             text.set_color("#555555")
 
-    # Парки
+    # Parks
     gdf_web = gdf.to_crs(crs=cfg.CRS_WEB)
     gdf_web.plot(
         ax=ax,
@@ -66,7 +66,7 @@ def plot_parks_with_basemap(
         zorder=3,
     )
 
-    # Сетка
+    # Graticule
     grid_lines, grid_labels = [], []
     for lon in cfg.GRID_LONS:
         if minx <= lon <= maxx:
@@ -110,7 +110,7 @@ def plot_parks_with_basemap(
         zorder=2,
     )
 
-    # Рамка
+    # Neatline
     rect = d.Rectangle(
         (minx_w, miny_w),
         maxx_w - minx_w,
@@ -127,7 +127,7 @@ def plot_parks_with_basemap(
     ax.set_yticks([])
     ax.axis("off")
 
-    # Метки сетки
+    # Graticule labels
     offset_x = (maxx_w - minx_w) * 0.03
     offset_y = (maxy_w - miny_w) * 0.03
     for _, row in grid_gdf.iterrows():
@@ -178,29 +178,29 @@ def plot_parks_with_basemap(
         facecolor=cfg.VIZ.map_bg_color,
     )
     d.plt.close(fig)
-    print(f"✅ Карта сохранена: {output_path}")
+    print(f"✅ Map saved to {output_path}")
 
 
 def plot_park_statistics(
     gdf: d.gpd.GeoDataFrame, output_path: d.Path = cfg.STATS_OUTPUT
 ) -> None:
-    """Рисует статистику: распределение площадей парков."""
+    """Plot the distribution of park areas."""
 
-    sns.set_style("whitegrid")  # ✅ sns напрямую
+    sns.set_style("whitegrid")  # ✅ Call seaborn directly
 
     fig, axes = d.plt.subplots(1, 2, figsize=cfg.VIZ.stats_figsize)
     fig.patch.set_facecolor(cfg.VIZ.stats_bg_color)
 
-    # Динамическая палитра
+    # Data-driven color palette
     unique_parks = gdf["name"].unique()
     cmap = d.plt.get_cmap(cfg.VIZ.stat_colormap)
     colors = [cmap(i) for i in d.np.linspace(0, 1, len(unique_parks))]
     color_map = dict(zip(unique_parks, colors))
 
-    # Гистограмма
+    # Bar chart
     sorted_gdf = gdf.sort_values("area_hectares")
     bar_colors = sorted_gdf["name"].map(color_map).tolist()
-    sns.barplot(  # ✅ sns напрямую
+    sns.barplot(  # ✅ Call seaborn directly
         data=sorted_gdf,
         x="area_hectares",
         y="name",
@@ -214,27 +214,27 @@ def plot_park_statistics(
     axes[0].set_title("Top Parks by Size", fontweight="bold", pad=15, fontsize=14)
     axes[0].set_facecolor("white")
 
-    # ✅ ДОБАВЛЕНО: Подписи значений площадей на каждом баре
+    # ✅ Label each bar with its park area
     for i, (idx, row) in enumerate(sorted_gdf.iterrows()):
         area = row["area_hectares"]
-        # Позиционируем текст чуть правее конца бара
-        # i - это индекс бара (0, 1, 2, ...)
-        # Добавляем небольшой отступ (0.5% от максимального значения)
+        # Place the label just beyond the end of the bar
+        # i is the zero-based bar index (0, 1, 2, ...)
+        # Use a small offset (0.5% of the maximum value)
         max_area = sorted_gdf["area_hectares"].max()
         offset = max_area * 0.01
 
         axes[0].text(
-            area + offset,  # x-координата (чуть правее бара)
-            i,  # y-координата (центр бара)
-            f"{area:.0f} ha",  # текст с округлением до целых
-            va="center",  # вертикальное выравнивание по центру
-            ha="left",  # горизонтальное выравнивание слева
+            area + offset,  # x-coordinate (just beyond the bar)
+            i,  # y-coordinate (center of the bar)
+            f"{area:.0f} ha",  # label rounded to a whole number
+            va="center",  # center vertically
+            ha="left",  # align left horizontally
             fontsize=10,
             fontweight="bold",
             color="#333333",
         )
 
-    # Пончик
+    # Donut chart
     pie_colors = gdf["name"].map(color_map).tolist()
     wedges, _ = axes[1].pie(
         gdf["area_hectares"],
@@ -262,19 +262,19 @@ def plot_park_statistics(
         facecolor=cfg.VIZ.stats_bg_color,
     )
     d.plt.close(fig)
-    print(f"✅ Статистика сохранена: {output_path}")
+    print(f"✅ Statistics chart saved to {output_path}")
 
 
 def main() -> None:
-    """Главная функция: загружает данные и создает визуализации."""
+    """Load park data and generate the visualizations."""
     d.logging.basicConfig(level=d.logging.INFO, format="%(levelname)s: %(message)s")
 
     if not cfg.PARKS_RAW_PATH.exists():
-        print(f"⚠️ Файл {cfg.PARKS_RAW_PATH} не найден!")
-        print("💡 Сначала выполните команду: make data")
+        print(f"⚠️ File not found: {cfg.PARKS_RAW_PATH}!")
+        print("💡 Run this command first: make data")
         return
 
-    print("🎨 Загрузка данных из OSM...")
+    print("🎨 Loading OSM data...")
     parks = d.gpd.read_file(cfg.PARKS_RAW_PATH)
     parks = (
         parks[
@@ -285,10 +285,10 @@ def main() -> None:
         .head(cfg.TOP_N_FEATURES)
     )
 
-    print(f"📍 Визуализируем {len(parks)} крупнейших объектов")
+    print(f"📍 Plotting the {len(parks)} largest features")
     plot_parks_with_basemap(parks)
     plot_park_statistics(parks)
-    print("✨ Все визуализации готовы!")
+    print("✨ All visualizations are ready!")
 
 
 if __name__ == "__main__":

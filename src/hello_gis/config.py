@@ -1,47 +1,48 @@
 """
-Конфигурация проекта.
-Чтобы сменить город, измените CITY_NAME и CITY_COUNTRY_NAME.
+Project configuration.
+To select a different city, change CITY_NAME and CITY_COUNTRY_NAME.
 """
 
 from pathlib import Path
 from typing import Final
 
 # ============================================================
-# 📂 ПУТИ К ДАННЫМ И ВЫВОДАМ
+# 📂 DATA AND OUTPUT PATHS
 # ============================================================
-# parents[2] поднимает нас из src/hello_gis в корень проекта (hello-gis)
+# parents[2] resolves from src/hello_gis to the project root (hello-gis)
 BASE_DIR: Final[Path] = Path(__file__).resolve().parents[2]
 
 DATA_RAW_DIR: Final[Path] = BASE_DIR / "data" / "raw"
 DATA_REF_DIR: Final[Path] = (
     BASE_DIR / "data" / "reference"
-)  # Справочные данные (полигоны, графы)
+)  # Reference data (boundaries, graphs)
 OUTPUTS_DIR: Final[Path] = BASE_DIR / "outputs"
 
-# Пути к файлам
+# File paths
 PARKS_RAW_PATH: Final[Path] = DATA_RAW_DIR / "parks.geojson"
 CITY_BOUNDARY_PATH: Final[Path] = DATA_REF_DIR / "city_boundary.geojson"
 NETWORK_CACHE_PATH: Final[Path] = DATA_REF_DIR / "walk_network.graphml"
+WALKING_GRAPH_CACHE_DIR: Final[Path] = BASE_DIR / "cache" / "walking_graph"
 
 MAP_OUTPUT: Final[Path] = OUTPUTS_DIR / "parks_map.png"
 STATS_OUTPUT: Final[Path] = OUTPUTS_DIR / "park_stats.png"
 NETWORK_OUTPUT: Final[Path] = OUTPUTS_DIR / "park_accessibility_analysis.png"
 
-# Автоматическое создание директорий при запуске
+# Create directories at startup
 for _dir in (DATA_RAW_DIR, DATA_REF_DIR, OUTPUTS_DIR):
     _dir.mkdir(parents=True, exist_ok=True)
 
 # ============================================================
-# 🌍 ПРОЕКЦИИ И ГЕОМЕТРИЯ
+# 🌍 PROJECTIONS AND GEOMETRY
 # ============================================================
 CRS_GEO: Final[str] = "EPSG:4326"
 CRS_WEB: Final[str] = "EPSG:3857"
-CRS_LOCAL: Final[str] = "EPSG:25830"  # UTM Zone 30N (Мадрид)
+CRS_LOCAL: Final[str] = "EPSG:25830"  # UTM Zone 30N (Madrid)
 
 DEFAULT_FEATURE_NAME: Final[str] = "Unnamed Park"
 
 # ============================================================
-# 🏙️ ПАРАМЕТРЫ ГОРОДА
+# 🏙️ CITY SETTINGS
 # ============================================================
 CITY_NAME: Final[str] = "Madrid"
 CITY_COUNTRY_NAME: Final[str] = "Spain"
@@ -50,11 +51,11 @@ CITY_BUFFER_RATIO: Final[float] = 0.05
 MIN_FEATURE_AREA_HA: Final[float] = 5.0
 TOP_N_FEATURES: Final[int] = 15
 
-# Границы всей Испании для универсального поиска любого города страны
+# Use nationwide bounds to search for any city in Spain
 COUNTRY_SEED_BBOX: Final[tuple[float, float, float, float]] = (-9.5, 35.8, 4.5, 43.8)
 
 # ============================================================
-# 🌐 СЕТЬ И API
+# 🌐 NETWORK AND API
 # ============================================================
 OSM_USER_AGENT: Final[str] = "MadridParksAnalysis/1.0 (Educational GIS Project)"
 OSM_TIMEOUT: Final[int] = 180
@@ -66,7 +67,7 @@ OVERPASS_URLS: Final[list[str]] = [
 ]
 
 # ============================================================
-# 🌳 ТЕГИ ДЛЯ СКАЧИВАНИЯ ПАРКОВ
+# 🌳 OSM TAGS FOR PARK DOWNLOADS
 # ============================================================
 OSM_TAGS: Final[dict] = {
     "leisure": "park",
@@ -76,7 +77,7 @@ OSM_TAGS: Final[dict] = {
 
 
 # ============================================================
-# 🎨 НАСТРОЙКИ ВИЗУАЛИЗАЦИИ
+# 🎨 VISUALIZATION SETTINGS
 # ============================================================
 class VIZ:
     map_figsize: tuple[int, int] = (10, 10)
@@ -105,7 +106,7 @@ class VIZ:
     stat_colormap: str = "viridis"
 
 
-# Координаты сетки для Мадрида
+# Grid coordinates for Madrid
 GRID_LONS: Final[list[float]] = [-3.8, -3.7, -3.6, -3.5]
 GRID_LATS: Final[list[float]] = [40.3, 40.4, 40.5, 40.6]
 MAP_BUFFER_RATIO: Final[float] = 0.05
